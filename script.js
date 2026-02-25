@@ -3,11 +3,17 @@ const PORTFOLIO_PATH = "marketmind_portfolio_plan.csv";
 const SITE_URL = "https://veer-rohra.github.io/MarketMind/";
 const CONFIG = window.MARKETMIND_CONFIG || {};
 const WAITLIST_ENDPOINT = CONFIG.waitlistEndpoint || "";
-const FOUNDER_NAME = CONFIG.founderName || "Your Name";
-const FOUNDER_PHONE = CONFIG.founderPhone || "+1-000-000-0000";
-const FOUNDER_SOCIALS = Array.isArray(CONFIG.founderSocials)
-  ? CONFIG.founderSocials
-  : [{ label: "Profile", url: CONFIG.founderSocial || "https://x.com/yourprofile" }];
+const FOUNDERS = Array.isArray(CONFIG.founders) && CONFIG.founders.length
+  ? CONFIG.founders
+  : [
+      {
+        name: "Your Name",
+        title: "Founder",
+        phone: "+1-000-000-0000",
+        email: "",
+        socials: [{ label: "Profile", url: "https://x.com/yourprofile" }],
+      },
+    ];
 
 const els = {
   metricEnter: document.getElementById("metricEnter"),
@@ -32,6 +38,7 @@ const els = {
   founderName: document.getElementById("founderName"),
   founderPhone: document.getElementById("founderPhone"),
   founderSocialsContainer: document.getElementById("founderSocialsContainer"),
+  foundingTeam: document.getElementById("foundingTeam"),
 };
 
 function parseCsv(text) {
@@ -222,10 +229,11 @@ async function submitWaitlist(formData) {
 }
 
 function initFounderInfo() {
-  els.founderName.textContent = FOUNDER_NAME;
-  els.founderPhone.textContent = FOUNDER_PHONE;
+  const primary = FOUNDERS[0];
+  els.founderName.textContent = primary.name || "Founder";
+  els.founderPhone.textContent = primary.phone || "-";
   els.founderSocialsContainer.innerHTML = "";
-  FOUNDER_SOCIALS.forEach((s, idx) => {
+  (primary.socials || []).forEach((s, idx) => {
     const a = document.createElement("a");
     a.href = s.url;
     a.target = "_blank";
@@ -235,6 +243,25 @@ function initFounderInfo() {
     if (idx < FOUNDER_SOCIALS.length - 1) {
       els.founderSocialsContainer.append(" | ");
     }
+  });
+}
+
+function renderFoundingTeam() {
+  els.foundingTeam.innerHTML = "";
+  FOUNDERS.forEach((f) => {
+    const socials = (f.socials || [])
+      .map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`)
+      .join(" | ");
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <h4>${f.name || "-"}</h4>
+      <p>${f.title || "Team"}</p>
+      <p>Phone: ${f.phone || "-"}</p>
+      <p>Email: ${f.email || "-"}</p>
+      <p>${socials || "Socials: -"}</p>
+    `;
+    els.foundingTeam.appendChild(card);
   });
 }
 
@@ -277,5 +304,6 @@ async function onWaitlistSubmit(event) {
 els.refreshBtn.addEventListener("click", loadDashboard);
 els.waitlistForm.addEventListener("submit", onWaitlistSubmit);
 initFounderInfo();
+renderFoundingTeam();
 initShareButtons();
 loadDashboard();

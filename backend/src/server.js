@@ -42,22 +42,16 @@ app.post("/api/waitlist", async (req, res) => {
 
   const result = upsertSubscriber({ name, email, role, source });
 
-  try {
-    await sendWelcomeEmail({ name, email, role });
-  } catch (err) {
-    return res.status(500).json({
-      error: "Saved signup, but welcome email failed.",
-      details: err.message,
-      created: result.created,
-      total: result.total,
-    });
-  }
+  // Return immediately so frontend never appears stuck; send email in background.
+  sendWelcomeEmail({ name, email, role }).catch((err) => {
+    console.error(`welcome-email-failed: ${email} -> ${err.message}`);
+  });
 
   return res.status(201).json({
     ok: true,
     created: result.created,
     total: result.total,
-    message: "Signup stored and welcome email sent.",
+    message: "Signup stored. Welcome email is being sent.",
   });
 });
 

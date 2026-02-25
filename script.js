@@ -202,9 +202,12 @@ async function submitWaitlist(formData) {
     return;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
   const response = await fetch(WAITLIST_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal: controller.signal,
     body: JSON.stringify({
       name: formData.get("name"),
       email: formData.get("email"),
@@ -212,6 +215,7 @@ async function submitWaitlist(formData) {
       source: "marketmind-site",
     }),
   });
+  clearTimeout(timeout);
   if (!response.ok) {
     throw new Error("Waitlist submission failed");
   }
@@ -259,9 +263,13 @@ async function onWaitlistSubmit(event) {
   const formData = new FormData(els.waitlistForm);
   try {
     await submitWaitlist(formData);
-    showWaitlistMessage("You are on the waitlist. Watch your inbox for private beta access.");
+    showWaitlistMessage("You are on the waitlist. Welcome email may take a minute.");
     els.waitlistForm.reset();
   } catch (err) {
+    if (err.name === "AbortError") {
+      showWaitlistMessage("Request timed out. Please try once more in a few seconds.", true);
+      return;
+    }
     showWaitlistMessage("Could not submit right now. Try again in a minute.", true);
   }
 }

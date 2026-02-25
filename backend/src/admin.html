@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarketMind Admin</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #0b1220;
+        color: #e5edf8;
+      }
+      .wrap {
+        width: min(1100px, calc(100% - 2rem));
+        margin: 1.2rem auto 2rem;
+      }
+      .panel {
+        border: 1px solid #26374f;
+        border-radius: 12px;
+        background: #111e30;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        margin: 0 0 0.8rem;
+        font-size: 1.35rem;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      input, button {
+        border-radius: 8px;
+        border: 1px solid #324764;
+        background: #0b1727;
+        color: #dbe7f6;
+        padding: 0.55rem 0.65rem;
+      }
+      input { min-width: 260px; }
+      button { cursor: pointer; }
+      button.primary {
+        background: #0f766e;
+        border-color: #0f766e;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        text-align: left;
+        border-bottom: 1px solid #23344b;
+        padding: 0.55rem 0.4rem;
+        font-size: 0.92rem;
+      }
+      th { color: #9ab0cc; }
+      .muted { color: #9ab0cc; }
+      .status { min-height: 1.2rem; margin-top: 0.4rem; }
+      .error { color: #fb7185; }
+      .ok { color: #34d399; }
+      @media (max-width: 760px) {
+        input { min-width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="panel">
+        <h1>MarketMind Waitlist Admin</h1>
+        <div class="row">
+          <input id="tokenInput" type="password" placeholder="Paste ADMIN_TOKEN" />
+          <button id="loadBtn" class="primary">Load Subscribers</button>
+          <button id="copyEmailsBtn">Copy Emails</button>
+          <button id="downloadCsvBtn">Download CSV</button>
+        </div>
+        <p id="summary" class="muted">No data loaded yet.</p>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section class="panel">
+        <h1>Send Campaign</h1>
+        <div class="row">
+          <input id="subjectInput" type="text" placeholder="Campaign subject (optional)" />
+          <button id="sendCampaignBtn" class="primary">Send to All</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h1>Subscribers</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Source</th>
+              <th>Subscribed At</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script>
+      const els = {
+        tokenInput: document.getElementById('tokenInput'),
+        loadBtn: document.getElementById('loadBtn'),
+        copyEmailsBtn: document.getElementById('copyEmailsBtn'),
+        downloadCsvBtn: document.getElementById('downloadCsvBtn'),
+        subjectInput: document.getElementById('subjectInput'),
+        sendCampaignBtn: document.getElementById('sendCampaignBtn'),
+        summary: document.getElementById('summary'),
+        status: document.getElementById('status'),
+        tbody: document.getElementById('tbody'),
+      };
+
+      let rows = [];
+
+      function setStatus(msg, type) {
+        els.status.textContent = msg;
+        els.status.className = `status ${type || ''}`;
+      }
+
+      function token() {
+        return els.tokenInput.value.trim();
+      }
+
+      function renderTable() {
+        els.tbody.innerHTML = '';
+        if (!rows.length) {
+          els.tbody.innerHTML = '<tr><td colspan="5" class="muted">No subscribers found.</td></tr>';
+          return;
+        }
+
+        rows.forEach((r) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${r.name || '-'}</td>
+            <td>${r.email || '-'}</td>
+            <td>${r.role || '-'}</td>
+            <td>${r.source || '-'}</td>
+            <td>${r.subscribed_at || '-'}</td>
+          `;
+          els.tbody.appendChild(tr);
+        });
+      }
+
+      async function loadSubscribers() {
+        if (!token()) {
+          setStatus('Enter ADMIN_TOKEN first.', 'error');
+          return;
+        }
+        setStatus('Loading...', '');
+
+        const response = await fetch('/api/waitlist', {
+          headers: { Authorization: `Bearer ${token()}` },
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          setStatus(payload.error || 'Failed to load.', 'error');
+          return;
+        }
+
+        rows = payload.rows || [];
+        renderTable();
+        els.summary.textContent = `Loaded ${rows.length} subscribers.`;
+        setStatus('Loaded successfully.', 'ok');
+      }
+
+      async function sendCampaign() {
+        if (!token()) {
+          setStatus('Enter ADMIN_TOKEN first.', 'error');
+          return;
+        }
+        setStatus('Sending campaign...', '');
+
+        const response = await fetch('/api/campaign/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token()}`,
+          },
+          body: JSON.stringify({ subject: els.subjectInput.value.trim() }),
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          setStatus(payload.error || 'Campaign failed.', 'error');
+          return;
+        }
+
+        setStatus(`Campaign done. Sent: ${payload.sent}, Failed: ${payload.failed}`, 'ok');
+      }
+
+      function copyEmails() {
+        const emails = rows.map((r) => r.email).filter(Boolean);
+        if (!emails.length) {
+          setStatus('No emails to copy.', 'error');
+          return;
+        }
+        navigator.clipboard.writeText(emails.join(', '));
+        setStatus('Emails copied to clipboard.', 'ok');
+      }
+
+      function downloadCsv() {
+        if (!rows.length) {
+          setStatus('No rows to export.', 'error');
+          return;
+        }
+
+        const headers = ['name', 'email', 'role', 'source', 'subscribed_at', 'updated_at'];
+        const lines = [headers.join(',')];
+        rows.forEach((r) => {
+          const vals = headers.map((h) => `"${String(r[h] || '').replaceAll('"', '""')}"`);
+          lines.push(vals.join(','));
+        });
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'marketmind_waitlist.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      els.loadBtn.addEventListener('click', () => loadSubscribers().catch((e) => setStatus(e.message, 'error')));
+      els.sendCampaignBtn.addEventListener('click', () => sendCampaign().catch((e) => setStatus(e.message, 'error')));
+      els.copyEmailsBtn.addEventListener('click', copyEmails);
+      els.downloadCsvBtn.addEventListener('click', downloadCsv);
+    </script>
+  </body>
+</html>

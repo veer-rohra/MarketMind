@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
 
 import { getWaitlist, upsertSubscriber } from "./store.js";
 import { sendWelcomeEmail, sendEmail, generateAiReply } from "./mailer.js";
@@ -9,6 +11,7 @@ const app = express();
 const port = Number(process.env.PORT || 8080);
 const siteOrigin = process.env.SITE_ORIGIN || "https://veer-rohra.github.io";
 const adminToken = process.env.ADMIN_TOKEN || "";
+const adminPagePath = path.resolve("backend/src/admin.html");
 
 app.use(cors({ origin: [siteOrigin, "http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000"] }));
 app.use(express.json());
@@ -19,6 +22,13 @@ function isValidEmail(email) {
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "marketmind-backend" });
+});
+
+app.get("/admin", (_req, res) => {
+  if (!fs.existsSync(adminPagePath)) {
+    return res.status(404).send("Admin page not found.");
+  }
+  return res.sendFile(adminPagePath);
 });
 
 app.get("/api/waitlist", (req, res) => {

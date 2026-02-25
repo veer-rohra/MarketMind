@@ -7,6 +7,7 @@ Collects early-access emails and sends automatic AI-powered replies.
 - `POST /api/waitlist`: stores subscriber and sends welcome mail
 - `GET /api/waitlist`: admin-only list of all subscribers
 - `POST /api/campaign/send`: admin-only broadcast to all subscribers
+- `GET /admin`: in-browser admin dashboard (use `ADMIN_TOKEN`)
 - JSON persistence at `backend/data/waitlist.json`
 
 ## Setup
@@ -30,6 +31,10 @@ const WAITLIST_ENDPOINT = "https://your-backend-domain/api/waitlist";
 ```
 
 ## Admin usage
+
+Open dashboard:
+
+`http://localhost:8080/admin`
 
 List waitlist:
 

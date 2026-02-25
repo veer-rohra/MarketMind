@@ -37,6 +37,7 @@
       <nav class="top-nav">
         <a href="#signals">Signals</a>
         <a href="#portfolio">Portfolio</a>
+        <a href="#data30">30-Day Data</a>
         <a href="#framework">Framework</a>
       </nav>
       <button id="refreshBtn" class="refresh-btn">Refresh Data</button>
@@ -45,15 +46,23 @@
     <main>
       <section class="hero">
         <p class="eyebrow">Real-Time AI Research & Investment Intelligence</p>
-        <h1>Your personal AI hedge-fund analyst, running 24/7.</h1>
+        <h1>Your Personal Investment AI</h1>
         <p class="hero-copy">
           MarketMind tracks market behavior, technical indicators, fundamentals, sentiment, and macro signals,
           then translates them into actions: ENTER, EXIT, WAIT, or AVOID.
         </p>
+        <div class="hero-icons">
+          <span>📈 Live Signals</span>
+          <span>🧠 AI Reasoning</span>
+          <span>⚡ 24/7 Monitoring</span>
+        </div>
         <div class="hero-cta">
-          <a class="cta-primary" href="#waitlist">Join Early Access</a>
+          <a class="cta-primary" href="#waitlist">Join Waitlist Now - Limited Spots</a>
           <a class="cta-secondary" href="#signals">See Live Signals</a>
         </div>
+        <p class="proof-line">
+          Trusted by early users tracking 7+ major stocks daily. New invite slots open each week.
+        </p>
         <div class="share-row">
           <button id="shareXBtn" class="share-btn">Share on X</button>
           <button id="shareLinkedInBtn" class="share-btn">Share on LinkedIn</button>
@@ -76,15 +85,15 @@
         <div class="hero-metrics">
           <article>
             <h2 id="metricEnter">-</h2>
-            <p>ENTER Signals</p>
+            <p>Long Entry Signals</p>
           </article>
           <article>
             <h2 id="metricWait">-</h2>
-            <p>WAIT Signals</p>
+            <p>Neutral/Wait Signals</p>
           </article>
           <article>
             <h2 id="metricRisk">-</h2>
-            <p>Avg Volatility</p>
+            <p title="Average 20-day realized volatility across loaded symbols">Avg Volatility (20d)</p>
           </article>
         </div>
       </section>
@@ -120,21 +129,62 @@
       <section id="signals" class="panel">
         <div class="panel-head">
           <h3>Latest Signals</h3>
-          <p id="signalsMeta">Loading...</p>
+          <div class="head-tools">
+            <p id="signalsMeta">Loading...</p>
+            <select id="signalFilter" aria-label="Signal filter">
+              <option value="all">All Signals</option>
+              <option value="long">Long/Enter</option>
+              <option value="short">Short/Exit</option>
+              <option value="neutral">Wait/Avoid</option>
+            </select>
+            <button id="clearFiltersBtn" class="share-btn">Clear Filters</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Ticker</th>
-                <th>Action</th>
-                <th>Pred 5D Return</th>
-                <th>Volatility</th>
+                <th title="Long/Short directional call based on model forecast and risk">
+                  Signal (Long/Short)
+                </th>
+                <th title="Model predicted 5-day return percentage">Pred 5D Return</th>
+                <th title="20-day realized volatility; lower is typically less risk">Volatility (Vol 20)</th>
                 <th>Close</th>
               </tr>
             </thead>
             <tbody id="signalsBody"></tbody>
           </table>
+        </div>
+      </section>
+
+      <section id="data30" class="panel">
+        <div class="panel-head">
+          <h3>Last 30-Day Data Snapshot</h3>
+          <p id="data30Meta">Waiting to load chart...</p>
+        </div>
+        <div class="quick-stats">
+          <article>
+            <p>Avg Pred 5D Return</p>
+            <h4 id="statAvgPred">-</h4>
+          </article>
+          <article>
+            <p>Top Signal</p>
+            <h4 id="statBestSignal">-</h4>
+          </article>
+          <article>
+            <p>Signal Mix</p>
+            <h4 id="statSignalMix">-</h4>
+          </article>
+        </div>
+        <div id="chartViewport" class="chart-viewport">
+          <canvas id="trendChart" width="1000" height="320" aria-label="30-day trend chart"></canvas>
+          <div id="chartTooltip" class="chart-tooltip" hidden></div>
+        </div>
+        <div class="chart-controls">
+          <button id="zoomOutBtn" class="share-btn">Zoom Out</button>
+          <button id="zoomInBtn" class="share-btn">Zoom In</button>
+          <button id="resetZoomBtn" class="share-btn">Reset Zoom</button>
         </div>
       </section>
 
@@ -150,23 +200,23 @@
         <h3>MarketMind Continuous Analysis Framework</h3>
         <div class="framework-grid">
           <article>
-            <h4>A. Real-Time Market Data</h4>
+            <h4>📡 A. Real-Time Market Data</h4>
             <p>Live stock price, volume changes, volatility, market depth, breakouts and breakdowns.</p>
           </article>
           <article>
-            <h4>B. Technical Indicators</h4>
+            <h4>🧭 B. Technical Indicators</h4>
             <p>Moving averages, RSI, MACD, support/resistance, and trend reversal detection.</p>
           </article>
           <article>
-            <h4>C. Fundamental Data</h4>
+            <h4>📑 C. Fundamental Data</h4>
             <p>P/E ratio, earnings reports, revenue growth, debt levels, cash flow, quarterly performance.</p>
           </article>
           <article>
-            <h4>D. News & Sentiment</h4>
+            <h4>🗞️ D. News & Sentiment</h4>
             <p>Breaking financial news, announcements, policy impact, social sentiment, rumor vs confirmed updates.</p>
           </article>
           <article>
-            <h4>E. Macro Environment</h4>
+            <h4>🌍 E. Macro Environment</h4>
             <p>Interest rates, inflation, sector performance, and global market signals.</p>
           </article>
         </div>
@@ -186,6 +236,12 @@
         Founder: <span id="founderName">Your Name</span> |
         Phone: <span id="founderPhone">+1-000-000-0000</span> |
         Socials: <span id="founderSocialsContainer"></span>
+      </p>
+      <p class="footer-links">
+        <a href="privacy.html">Privacy Policy</a> |
+        <a href="terms.html">Terms</a> |
+        <a href="https://www.linkedin.com/in/veer-rohra" target="_blank" rel="noopener">LinkedIn</a> |
+        <a href="https://x.com" target="_blank" rel="noopener">Twitter</a>
       </p>
     </footer>
 

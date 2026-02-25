@@ -1,5 +1,6 @@
 const SIGNALS_PATH = "marketmind_signals.csv";
 const PORTFOLIO_PATH = "marketmind_portfolio_plan.csv";
+const LIVE_DATA_PATH = "marketmind_ml/live_market_data.csv";
 const SITE_URL = "https://veer-rohra.github.io/MarketMind/";
 const CONFIG = window.MARKETMIND_CONFIG || {};
 const WAITLIST_ENDPOINT = CONFIG.waitlistEndpoint || "";
@@ -39,7 +40,29 @@ const els = {
   founderPhone: document.getElementById("founderPhone"),
   founderSocialsContainer: document.getElementById("founderSocialsContainer"),
   foundingTeam: document.getElementById("foundingTeam"),
+  signalFilter: document.getElementById("signalFilter"),
+  clearFiltersBtn: document.getElementById("clearFiltersBtn"),
+  data30Meta: document.getElementById("data30Meta"),
+  statAvgPred: document.getElementById("statAvgPred"),
+  statBestSignal: document.getElementById("statBestSignal"),
+  statSignalMix: document.getElementById("statSignalMix"),
+  trendChart: document.getElementById("trendChart"),
+  chartViewport: document.getElementById("chartViewport"),
+  chartTooltip: document.getElementById("chartTooltip"),
+  zoomOutBtn: document.getElementById("zoomOutBtn"),
+  zoomInBtn: document.getElementById("zoomInBtn"),
+  resetZoomBtn: document.getElementById("resetZoomBtn"),
 };
+
+const chartState = {
+  initialized: false,
+  points: [],
+  zoom: 1,
+  minZoom: 1,
+  maxZoom: 4,
+};
+
+let signalsCache = [];
 
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -91,12 +114,28 @@ function fmtUsd(v) {
 }
 
 function badge(action) {
-  return `<span class="badge ${action}">${action}</span>`;
+  const label =
+    action === "ENTER" ? "LONG ENTRY" : action === "EXIT" ? "SHORT/EXIT" : action === "WAIT" ? "WAIT" : "AVOID";
+  return `<span class="badge ${action}">${label}</span>`;
+}
+
+function actionBucket(action) {
+  if (action === "ENTER") return "long";
+  if (action === "EXIT") return "short";
+  return "neutral";
+}
+
+function applySignalFilter(rows) {
+  const filter = els.signalFilter.value;
+  if (filter === "all") return rows;
+  return rows.filter((r) => actionBucket(r.action) === filter);
 }
 
 function renderSignals(rows) {
+  signalsCache = rows;
   els.signalsBody.innerHTML = "";
-  if (!rows.length) {
+  const filteredRows = applySignalFilter(rows);
+  if (!filteredRows.length) {
     els.signalsBody.innerHTML = `<tr><td colspan="5">No signal data found. Run marketmind_ml/run_daily.sh first.</td></tr>`;
     els.metricEnter.textContent = "0";
     els.metricWait.textContent = "0";
@@ -104,16 +143,16 @@ function renderSignals(rows) {
     return;
   }
 
-  const enterCount = rows.filter((r) => r.action === "ENTER").length;
-  const waitCount = rows.filter((r) => r.action === "WAIT").length;
-  const avgVol = rows.reduce((acc, r) => acc + (Number(r.volatility_20d) || 0), 0) / rows.length;
+  const enterCount = filteredRows.filter((r) => r.action === "ENTER").length;
+  const waitCount = filteredRows.filter((r) => r.action === "WAIT" || r.action === "AVOID").length;
+  const avgVol = filteredRows.reduce((acc, r) => acc + (Number(r.volatility_20d) || 0), 0) / filteredRows.length;
 
   els.metricEnter.textContent = String(enterCount);
   els.metricWait.textContent = String(waitCount);
   els.metricRisk.textContent = fmtPct(avgVol);
   els.trustModelVersion.textContent = CONFIG.modelVersion || "v1.0";
 
-  const dates = rows.map((r) => new Date(r.date)).filter((d) => !Number.isNaN(d.getTime()));
+  const dates = filteredRows.map((r) => new Date(r.date)).filter((d) => !Number.isNaN(d.getTime()));
   if (dates.length) {
     const latest = new Date(Math.max(...dates.map((d) => d.getTime())));
     const now = new Date();
@@ -125,7 +164,7 @@ function renderSignals(rows) {
     els.trustFreshness.textContent = "n/a";
   }
 
-  rows.forEach((row, idx) => {
+  filteredRows.forEach((row, idx) => {
     const tr = document.createElement("tr");
     tr.className = "fade-in";
     tr.style.animationDelay = `${idx * 35}ms`;
@@ -139,7 +178,7 @@ function renderSignals(rows) {
     els.signalsBody.appendChild(tr);
   });
 
-  els.signalsMeta.textContent = `Loaded ${rows.length} rows`;
+  els.signalsMeta.textContent = `Loaded ${filteredRows.length} rows`;
 }
 
 function renderPortfolio(rows) {
@@ -182,12 +221,187 @@ async function loadDashboard() {
     const [signals, portfolio] = await Promise.all([fetchCsv(SIGNALS_PATH), fetchCsv(PORTFOLIO_PATH)]);
     renderSignals(signals);
     renderPortfolio(portfolio);
+    updateDataSummary(signals);
   } catch (err) {
     els.signalsMeta.textContent = "Data unavailable";
     els.portfolioMeta.textContent = "Data unavailable";
     els.signalsBody.innerHTML = `<tr><td colspan="5">${err.message}</td></tr>`;
     els.portfolioCards.innerHTML = `<article class="card">${err.message}</article>`;
   }
+}
+
+function updateDataSummary(signals) {
+  if (!signals.length) {
+    els.statAvgPred.textContent = "n/a";
+    els.statBestSignal.textContent = "n/a";
+    els.statSignalMix.textContent = "n/a";
+    return;
+  }
+  const avgPred = signals.reduce((acc, r) => acc + (Number(r.pred_forward_return_5d) || 0), 0) / signals.length;
+  const best = [...signals].sort((a, b) => Number(b.pred_forward_return_5d) - Number(a.pred_forward_return_5d))[0];
+  const longCount = signals.filter((s) => s.action === "ENTER").length;
+  const shortCount = signals.filter((s) => s.action === "EXIT").length;
+  const neutralCount = signals.length - longCount - shortCount;
+
+  els.statAvgPred.textContent = fmtPct(avgPred);
+  els.statBestSignal.textContent = `${best.ticker} ${fmtPct(best.pred_forward_return_5d)}`;
+  els.statSignalMix.textContent = `L:${longCount} S:${shortCount} N:${neutralCount}`;
+}
+
+function drawChart() {
+  const canvas = els.trendChart;
+  const ctx = canvas.getContext("2d");
+  const width = canvas.clientWidth;
+  const height = Math.max(220, Math.round(width * 0.32));
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(width * dpr);
+  canvas.height = Math.floor(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const points = chartState.points;
+  if (!points.length) {
+    ctx.fillStyle = "#9fb4cb";
+    ctx.font = "14px Space Grotesk";
+    ctx.fillText("No 30-day chart data yet.", 14, 32);
+    return;
+  }
+
+  const visibleCount = Math.max(8, Math.round(points.length / chartState.zoom));
+  const start = Math.max(0, points.length - visibleCount);
+  const visible = points.slice(start);
+  const values = visible.map((p) => p.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = 28;
+  const innerW = width - pad * 2;
+  const innerH = height - pad * 2;
+
+  ctx.strokeStyle = "rgba(150,180,210,0.2)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i += 1) {
+    const y = pad + (innerH * i) / 4;
+    ctx.beginPath();
+    ctx.moveTo(pad, y);
+    ctx.lineTo(width - pad, y);
+    ctx.stroke();
+  }
+
+  const scaleY = (v) => {
+    if (max === min) return pad + innerH / 2;
+    return pad + ((max - v) / (max - min)) * innerH;
+  };
+  const scaleX = (idx) => pad + (idx / Math.max(visible.length - 1, 1)) * innerW;
+
+  ctx.strokeStyle = "#5eead4";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  visible.forEach((p, idx) => {
+    const x = scaleX(idx);
+    const y = scaleY(p.value);
+    if (idx === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#d6e9fb";
+  ctx.font = "12px IBM Plex Mono";
+  ctx.fillText(visible[0].label, pad, height - 8);
+  ctx.fillText(visible[visible.length - 1].label, width - pad - 72, height - 8);
+
+  chartState.visible = visible;
+  chartState.scaleX = scaleX;
+  chartState.scaleY = scaleY;
+  chartState.pad = pad;
+  chartState.width = width;
+  chartState.height = height;
+}
+
+function onChartPointerMove(event) {
+  if (!chartState.visible?.length) return;
+  const rect = els.trendChart.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const idx = Math.round(((x - chartState.pad) / (chartState.width - chartState.pad * 2)) * (chartState.visible.length - 1));
+  const safeIdx = Math.max(0, Math.min(chartState.visible.length - 1, idx));
+  const point = chartState.visible[safeIdx];
+  if (!point) return;
+
+  const px = chartState.scaleX(safeIdx);
+  const py = chartState.scaleY(point.value);
+  els.chartTooltip.hidden = false;
+  els.chartTooltip.style.left = `${px}px`;
+  els.chartTooltip.style.top = `${py}px`;
+  els.chartTooltip.textContent = `${point.label} | ${point.ticker}: ${point.value.toFixed(2)}`;
+}
+
+function onChartLeave() {
+  els.chartTooltip.hidden = true;
+}
+
+function wireChartControls() {
+  els.zoomInBtn.addEventListener("click", () => {
+    chartState.zoom = Math.min(chartState.maxZoom, chartState.zoom + 0.5);
+    drawChart();
+  });
+  els.zoomOutBtn.addEventListener("click", () => {
+    chartState.zoom = Math.max(chartState.minZoom, chartState.zoom - 0.5);
+    drawChart();
+  });
+  els.resetZoomBtn.addEventListener("click", () => {
+    chartState.zoom = 1;
+    drawChart();
+  });
+  els.trendChart.addEventListener("mousemove", onChartPointerMove);
+  els.trendChart.addEventListener("mouseleave", onChartLeave);
+  els.trendChart.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    chartState.zoom = Math.max(chartState.minZoom, Math.min(chartState.maxZoom, chartState.zoom + (event.deltaY < 0 ? 0.25 : -0.25)));
+    drawChart();
+  });
+  window.addEventListener("resize", () => {
+    if (chartState.initialized) drawChart();
+  });
+}
+
+function normalizeChartPointsFromLive(rows) {
+  const byTicker = new Map();
+  rows.forEach((r) => {
+    if (!byTicker.has(r.ticker)) byTicker.set(r.ticker, []);
+    byTicker.get(r.ticker).push(r);
+  });
+  const [ticker, series] = [...byTicker.entries()].sort((a, b) => b[1].length - a[1].length)[0] || [];
+  if (!series) return [];
+  return series
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(-30)
+    .map((r) => ({ label: r.date, value: Number(r.close), ticker }));
+}
+
+async function initChartLazy() {
+  const observer = new IntersectionObserver(
+    async (entries) => {
+      if (!entries.some((e) => e.isIntersecting) || chartState.initialized) return;
+      chartState.initialized = true;
+      observer.disconnect();
+      try {
+        const liveRows = await fetchCsv(LIVE_DATA_PATH);
+        chartState.points = normalizeChartPointsFromLive(liveRows);
+        els.data30Meta.textContent = chartState.points.length
+          ? `Interactive 30-day close trend (hover + zoom) from ${chartState.points[0].ticker}`
+          : "No live 30-day data file found.";
+      } catch {
+        chartState.points = signalsCache.slice(-30).map((s) => ({
+          label: s.date,
+          value: Number(s.pred_forward_return_5d || 0) * 100,
+          ticker: s.ticker,
+        }));
+        els.data30Meta.textContent = "Fallback chart from predicted return data.";
+      }
+      drawChart();
+    },
+    { threshold: 0.25 }
+  );
+  observer.observe(els.chartViewport);
 }
 
 function showWaitlistMessage(text, isError = false) {
@@ -303,8 +517,15 @@ async function onWaitlistSubmit(event) {
 }
 
 els.refreshBtn.addEventListener("click", loadDashboard);
+els.signalFilter.addEventListener("change", () => renderSignals(signalsCache));
+els.clearFiltersBtn.addEventListener("click", () => {
+  els.signalFilter.value = "all";
+  renderSignals(signalsCache);
+});
 els.waitlistForm.addEventListener("submit", onWaitlistSubmit);
+wireChartControls();
 initFounderInfo();
 renderFoundingTeam();
 initShareButtons();
+initChartLazy();
 loadDashboard();

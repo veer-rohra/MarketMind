@@ -121,6 +121,37 @@ h1 {
   max-width: 68ch;
 }
 
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.cta-primary,
+.cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 0.62rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.cta-primary {
+  background: linear-gradient(135deg, #0f766e, #155e75);
+  color: #e8fbff;
+}
+
+.cta-secondary {
+  background: rgba(9, 20, 32, 0.65);
+  color: var(--text);
+}
+
 .hero-metrics {
   margin-top: 1rem;
   display: grid;
@@ -165,6 +196,48 @@ h1 {
   color: var(--muted);
   font-size: 0.82rem;
   font-family: "IBM Plex Mono", monospace;
+}
+
+.waitlist-panel .panel-head {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.waitlist-form {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.waitlist-form label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.waitlist-form input,
+.waitlist-form select {
+  border: 1px solid var(--line);
+  background: rgba(8, 18, 28, 0.75);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.6rem 0.62rem;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.form-submit {
+  min-height: 42px;
+}
+
+.waitlist-message {
+  min-height: 1.2rem;
+  margin: 0.6rem 0 0;
+  color: var(--accent);
+  font-size: 0.84rem;
 }
 
 .table-wrap {
@@ -303,6 +376,10 @@ code {
   }
 
   .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .waitlist-form {
     grid-template-columns: 1fr;
   }
 }

@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MarketMind | AI Research Intelligence</title>
+    <meta
+      name="description"
+      content="MarketMind is a real-time AI stock research system that tracks market, technical, fundamental, sentiment, and macro signals to output ENTER/EXIT/WAIT/AVOID decisions."
+    />
+    <meta name="theme-color" content="#09141f" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MarketMind | Real-Time AI Research Intelligence" />
+    <meta
+      property="og:description"
+      content="I built an AI analyst that continuously tracks stock signals and generates ENTER/EXIT/WAIT/AVOID decisions."
+    />
+    <meta property="og:url" content="https://veer-rohra.github.io/MarketMind/" />
+    <meta property="og:image" content="https://veer-rohra.github.io/MarketMind/assets/social/marketmind-preview.png" />
+    <meta property="og:image:alt" content="MarketMind dashboard preview" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MarketMind | Real-Time AI Research Intelligence" />
+    <meta
+      name="twitter:description"
+      content="24/7 AI stock research engine with actionable ENTER/EXIT/WAIT/AVOID output."
+    />
+    <meta name="twitter:image" content="https://veer-rohra.github.io/MarketMind/assets/social/marketmind-preview.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -24,11 +45,15 @@
     <main>
       <section class="hero">
         <p class="eyebrow">Real-Time AI Research & Investment Intelligence</p>
-        <h1>Continuous company research, signal scoring, and decision support.</h1>
+        <h1>Your personal AI hedge-fund analyst, running 24/7.</h1>
         <p class="hero-copy">
           MarketMind tracks market behavior, technical indicators, fundamentals, sentiment, and macro signals,
           then translates them into actions: ENTER, EXIT, WAIT, or AVOID.
         </p>
+        <div class="hero-cta">
+          <a class="cta-primary" href="#waitlist">Join Early Access</a>
+          <a class="cta-secondary" href="#signals">See Live Signals</a>
+        </div>
         <div class="hero-metrics">
           <article>
             <h2 id="metricEnter">-</h2>
@@ -43,6 +68,34 @@
             <p>Avg Volatility</p>
           </article>
         </div>
+      </section>
+
+      <section id="waitlist" class="panel waitlist-panel">
+        <div class="panel-head">
+          <h3>Get Early Access</h3>
+          <p>Join the waitlist for private beta, weekly performance snapshots, and launch updates.</p>
+        </div>
+        <form id="waitlistForm" class="waitlist-form">
+          <label>
+            Name
+            <input type="text" id="waitlistName" name="name" placeholder="Your name" required />
+          </label>
+          <label>
+            Email
+            <input type="email" id="waitlistEmail" name="email" placeholder="you@example.com" required />
+          </label>
+          <label>
+            Role
+            <select id="waitlistRole" name="role">
+              <option value="retail-investor">Retail Investor</option>
+              <option value="swing-trader">Swing Trader</option>
+              <option value="analyst">Analyst</option>
+              <option value="founder">Founder / Operator</option>
+            </select>
+          </label>
+          <button type="submit" class="cta-primary form-submit">Join Waitlist</button>
+        </form>
+        <p id="waitlistMessage" class="waitlist-message"></p>
       </section>
 
       <section id="signals" class="panel">

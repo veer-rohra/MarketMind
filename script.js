@@ -1,5 +1,6 @@
 const SIGNALS_PATH = "marketmind_signals.csv";
 const PORTFOLIO_PATH = "marketmind_portfolio_plan.csv";
+const WAITLIST_ENDPOINT = "";
 
 const els = {
   metricEnter: document.getElementById("metricEnter"),
@@ -10,6 +11,11 @@ const els = {
   portfolioMeta: document.getElementById("portfolioMeta"),
   portfolioCards: document.getElementById("portfolioCards"),
   refreshBtn: document.getElementById("refreshBtn"),
+  waitlistForm: document.getElementById("waitlistForm"),
+  waitlistMessage: document.getElementById("waitlistMessage"),
+  waitlistName: document.getElementById("waitlistName"),
+  waitlistEmail: document.getElementById("waitlistEmail"),
+  waitlistRole: document.getElementById("waitlistRole"),
 };
 
 function parseCsv(text) {
@@ -148,5 +154,52 @@ async function loadDashboard() {
   }
 }
 
+function showWaitlistMessage(text, isError = false) {
+  els.waitlistMessage.textContent = text;
+  els.waitlistMessage.style.color = isError ? "#fb7185" : "#5eead4";
+}
+
+async function submitWaitlist(formData) {
+  if (!WAITLIST_ENDPOINT) {
+    const entry = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      role: formData.get("role"),
+      timestamp: new Date().toISOString(),
+    };
+    const existing = JSON.parse(localStorage.getItem("marketmind_waitlist") || "[]");
+    existing.push(entry);
+    localStorage.setItem("marketmind_waitlist", JSON.stringify(existing));
+    return;
+  }
+
+  const response = await fetch(WAITLIST_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: formData.get("name"),
+      email: formData.get("email"),
+      role: formData.get("role"),
+      source: "marketmind-site",
+    }),
+  });
+  if (!response.ok) {
+    throw new Error("Waitlist submission failed");
+  }
+}
+
+async function onWaitlistSubmit(event) {
+  event.preventDefault();
+  const formData = new FormData(els.waitlistForm);
+  try {
+    await submitWaitlist(formData);
+    showWaitlistMessage("You are on the waitlist. Watch your inbox for private beta access.");
+    els.waitlistForm.reset();
+  } catch (err) {
+    showWaitlistMessage("Could not submit right now. Try again in a minute.", true);
+  }
+}
+
 els.refreshBtn.addEventListener("click", loadDashboard);
+els.waitlistForm.addEventListener("submit", onWaitlistSubmit);
 loadDashboard();

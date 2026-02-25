@@ -1,0 +1,108 @@
+name: MarketMind Daily
+
+on:
+  schedule:
+    - cron: "35 13 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  run-marketmind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r marketmind_ml/requirements.txt
+
+      - name: Ensure model exists
+        run: |
+          if [ ! -f "marketmind_ml/model.joblib" ]; then
+            python marketmind_ml/generate_synthetic_data.py --rows 2500 --output marketmind_ml/sample_market_data.csv
+            python marketmind_ml/train_marketmind.py --input marketmind_ml/sample_market_data.csv --model-out marketmind_ml/model.joblib
+          fi
+
+      - name: Fetch live data
+        env:
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          MARKETMIND_TICKERS: ${{ vars.MARKETMIND_TICKERS }}
+          MARKETMIND_PERIOD: ${{ vars.MARKETMIND_PERIOD }}
+          MARKETMIND_NEWS_PROVIDER: ${{ vars.MARKETMIND_NEWS_PROVIDER }}
+        run: |
+          TICKERS="${MARKETMIND_TICKERS:-AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA}"
+          PERIOD="${MARKETMIND_PERIOD:-6mo}"
+          NEWS_PROVIDER="${MARKETMIND_NEWS_PROVIDER:-none}"
+          python marketmind_ml/fetch_live_data.py \
+            --tickers "$TICKERS" \
+            --period "$PERIOD" \
+            --news-provider "$NEWS_PROVIDER" \
+            --output marketmind_ml/live_market_data.csv
+
+      - name: Generate signals
+        run: |
+          python marketmind_ml/predict_signal.py \
+            --model marketmind_ml/model.joblib \
+            --input marketmind_ml/live_market_data.csv \
+            --latest-only \
+            --output marketmind_signals.csv
+
+      - name: Rank portfolio
+        env:
+          MARKETMIND_CAPITAL: ${{ vars.MARKETMIND_CAPITAL }}
+          MARKETMIND_RISK_BUDGET: ${{ vars.MARKETMIND_RISK_BUDGET }}
+          MARKETMIND_TOP_N: ${{ vars.MARKETMIND_TOP_N }}
+          MARKETMIND_MAX_POSITION_WEIGHT: ${{ vars.MARKETMIND_MAX_POSITION_WEIGHT }}
+        run: |
+          CAPITAL="${MARKETMIND_CAPITAL:-100000}"
+          RISK_BUDGET="${MARKETMIND_RISK_BUDGET:-0.8}"
+          TOP_N="${MARKETMIND_TOP_N:-8}"
+          MAX_WEIGHT="${MARKETMIND_MAX_POSITION_WEIGHT:-0.25}"
+          python marketmind_ml/rank_portfolio.py \
+            --signals marketmind_signals.csv \
+            --output marketmind_portfolio_plan.csv \
+            --report-output marketmind_portfolio_report.md \
+            --capital "$CAPITAL" \
+            --risk-budget "$RISK_BUDGET" \
+            --top-n "$TOP_N" \
+            --max-position-weight "$MAX_WEIGHT"
+
+      - name: Build intelligence report
+        run: |
+          python marketmind_ml/build_intelligence_report.py \
+            --live-data marketmind_ml/live_market_data.csv \
+            --signals marketmind_signals.csv \
+            --portfolio marketmind_portfolio_plan.csv \
+            --output marketmind_intelligence_report.md
+
+      - name: Send alerts
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MARKETMIND_ALERTS: ${{ vars.MARKETMIND_ALERTS }}
+          MARKETMIND_ALERT_TOP_N: ${{ vars.MARKETMIND_ALERT_TOP_N }}
+        run: |
+          ALERTS="${MARKETMIND_ALERTS:-auto}"
+          ALERT_TOP_N="${MARKETMIND_ALERT_TOP_N:-5}"
+          python marketmind_ml/send_alerts.py \
+            --portfolio marketmind_portfolio_plan.csv \
+            --top-n "$ALERT_TOP_N" \
+            --channel "$ALERTS"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketmind-daily-output
+          path: |
+            marketmind_ml/live_market_data.csv
+            marketmind_signals.csv
+            marketmind_portfolio_plan.csv
+            marketmind_portfolio_report.md
+            marketmind_intelligence_report.md

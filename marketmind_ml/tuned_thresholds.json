@@ -1,0 +1,5 @@
+{
+  "enter_pred_return": 0.045,
+  "exit_pred_return": -0.03,
+  "high_risk_volatility": 0.04
+}

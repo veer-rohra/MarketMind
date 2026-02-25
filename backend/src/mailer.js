@@ -48,28 +48,42 @@ export async function generateAiReply({ name, role }) {
     ].join("\n");
   }
 
-  const client = new OpenAI({ apiKey });
-  const response = await client.responses.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-    input: [
-      {
-        role: "system",
-        content:
-          "You draft concise onboarding emails. Keep tone warm and professional. Include the exact phrase 'thnks for being a part of our team'.",
-      },
-      {
-        role: "user",
-        content: `Write a short welcome email for ${name}, role: ${role}. Include founder signature details: ${founder.name}, ${founder.phone}, ${founder.socials}.`,
-      },
-    ],
-  });
+  try {
+    const client = new OpenAI({ apiKey });
+    const response = await client.responses.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      input: [
+        {
+          role: "system",
+          content:
+            "You draft concise onboarding emails. Keep tone warm and professional. Include the exact phrase 'thnks for being a part of our team'.",
+        },
+        {
+          role: "user",
+          content: `Write a short welcome email for ${name}, role: ${role}. Include founder signature details: ${founder.name}, ${founder.phone}, ${founder.socials}.`,
+        },
+      ],
+    });
 
-  const text = response.output_text?.trim();
-  if (!text) {
-    throw new Error("AI did not return email text");
+    const text = response.output_text?.trim();
+    if (!text) {
+      throw new Error("AI did not return email text");
+    }
+
+    return text.includes(REQUIRED_PHRASE) ? text : `${text}\n\n${REQUIRED_PHRASE}`;
+  } catch {
+    return [
+      `Hi ${name},`,
+      "",
+      "thnks for being a part of our team.",
+      "Your early access request for MarketMind has been received.",
+      `We will share your invite soon with a role-tailored setup for ${role}.`,
+      "",
+      `Founder: ${founder.name}`,
+      `Phone: ${founder.phone}`,
+      `Socials: ${founder.socials}`,
+    ].join("\n");
   }
-
-  return text.includes(REQUIRED_PHRASE) ? text : `${text}\n\n${REQUIRED_PHRASE}`;
 }
 
 export async function sendEmail({ to, subject, text }) {

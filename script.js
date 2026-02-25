@@ -5,7 +5,9 @@ const CONFIG = window.MARKETMIND_CONFIG || {};
 const WAITLIST_ENDPOINT = CONFIG.waitlistEndpoint || "";
 const FOUNDER_NAME = CONFIG.founderName || "Your Name";
 const FOUNDER_PHONE = CONFIG.founderPhone || "+1-000-000-0000";
-const FOUNDER_SOCIAL = CONFIG.founderSocial || "https://x.com/yourprofile";
+const FOUNDER_SOCIALS = Array.isArray(CONFIG.founderSocials)
+  ? CONFIG.founderSocials
+  : [{ label: "Profile", url: CONFIG.founderSocial || "https://x.com/yourprofile" }];
 
 const els = {
   metricEnter: document.getElementById("metricEnter"),
@@ -29,7 +31,7 @@ const els = {
   copyLinkBtn: document.getElementById("copyLinkBtn"),
   founderName: document.getElementById("founderName"),
   founderPhone: document.getElementById("founderPhone"),
-  founderSocials: document.getElementById("founderSocials"),
+  founderSocialsContainer: document.getElementById("founderSocialsContainer"),
 };
 
 function parseCsv(text) {
@@ -218,8 +220,18 @@ async function submitWaitlist(formData) {
 function initFounderInfo() {
   els.founderName.textContent = FOUNDER_NAME;
   els.founderPhone.textContent = FOUNDER_PHONE;
-  els.founderSocials.href = FOUNDER_SOCIAL;
-  els.founderSocials.textContent = FOUNDER_SOCIAL;
+  els.founderSocialsContainer.innerHTML = "";
+  FOUNDER_SOCIALS.forEach((s, idx) => {
+    const a = document.createElement("a");
+    a.href = s.url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = s.label || s.url;
+    els.founderSocialsContainer.appendChild(a);
+    if (idx < FOUNDER_SOCIALS.length - 1) {
+      els.founderSocialsContainer.append(" | ");
+    }
+  });
 }
 
 function initShareButtons() {

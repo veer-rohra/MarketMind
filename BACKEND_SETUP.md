@@ -5,6 +5,7 @@
 1. Create a new Render web service from this repo.
 2. Use `backend/render.yaml` (or set root dir `backend`).
 3. Add env vars from `backend/.env.example`.
+4. Set `SITE_ORIGIN=https://veer-rohra.github.io`.
 
 ## 2) Configure frontend
 
@@ -13,9 +14,12 @@ Edit `/site-config.js`:
 ```js
 window.MARKETMIND_CONFIG = {
   waitlistEndpoint: "https://<your-render-domain>/api/waitlist",
-  founderName: "Your Full Name",
-  founderPhone: "+1-...",
-  founderSocial: "https://x.com/<yourhandle>",
+  founderName: "Veer Rohra",
+  founderPhone: "+91 7340545327",
+  founderSocials: [
+    { label: "Instagram", url: "https://www.instagram.com/vvveeerrrrrrrr/" },
+    { label: "LinkedIn", url: "https://www.linkedin.com/in/veer-rohra" },
+  ],
   modelVersion: "v1.0",
 };
 ```
@@ -38,3 +42,7 @@ curl -X POST \
 
 This sends AI-generated replies and always includes:
 `thnks for being a part of our team`
+
+## Security note
+
+If an API key is ever pasted in chat/screenshots/public places, rotate it immediately and replace it in Render env vars.

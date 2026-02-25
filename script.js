@@ -254,13 +254,13 @@ function renderFoundingTeam() {
       .map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`)
       .join(" | ");
     const card = document.createElement("article");
-    card.className = "card";
+    card.className = "card founder-card";
     card.innerHTML = `
       <h4>${f.name || "-"}</h4>
-      <p>${f.title || "Team"}</p>
-      <p>Phone: ${f.phone || "-"}</p>
-      <p>Email: ${f.email || "-"}</p>
-      <p>${socials || "Socials: -"}</p>
+      <p class="founder-title">${f.title || "Team"}</p>
+      <p class="team-line"><span class="team-label">Phone:</span> <span class="team-value">${f.phone || "-"}</span></p>
+      <p class="team-line"><span class="team-label">Email:</span> <span class="team-value">${f.email ? `<a href="mailto:${f.email}">${f.email}</a>` : "-"}</span></p>
+      <p class="team-line team-socials"><span class="team-label">Socials:</span> <span class="team-value">${socials || "-"}</span></p>
     `;
     els.foundingTeam.appendChild(card);
   });

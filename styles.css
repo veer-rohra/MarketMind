@@ -341,6 +341,10 @@ h1 {
   gap: 0.75rem;
 }
 
+#team .cards {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
 .card {
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -356,6 +360,42 @@ h1 {
   margin: 0.2rem 0;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.founder-card {
+  min-height: 206px;
+}
+
+.founder-title {
+  color: var(--text);
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.team-line {
+  line-height: 1.35;
+}
+
+.team-label {
+  color: #9fb0c6;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.77rem;
+}
+
+.team-value {
+  display: inline;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.founder-card a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.founder-card a:hover {
+  text-decoration: underline;
 }
 
 .framework-grid {
@@ -436,6 +476,10 @@ code {
   }
 
   .waitlist-form {
+    grid-template-columns: 1fr;
+  }
+
+  #team .cards {
     grid-template-columns: 1fr;
   }
 }

@@ -1,6 +1,11 @@
 const SIGNALS_PATH = "marketmind_signals.csv";
 const PORTFOLIO_PATH = "marketmind_portfolio_plan.csv";
-const WAITLIST_ENDPOINT = "";
+const SITE_URL = "https://veer-rohra.github.io/MarketMind/";
+const CONFIG = window.MARKETMIND_CONFIG || {};
+const WAITLIST_ENDPOINT = CONFIG.waitlistEndpoint || "";
+const FOUNDER_NAME = CONFIG.founderName || "Your Name";
+const FOUNDER_PHONE = CONFIG.founderPhone || "+1-000-000-0000";
+const FOUNDER_SOCIAL = CONFIG.founderSocial || "https://x.com/yourprofile";
 
 const els = {
   metricEnter: document.getElementById("metricEnter"),
@@ -16,6 +21,15 @@ const els = {
   waitlistName: document.getElementById("waitlistName"),
   waitlistEmail: document.getElementById("waitlistEmail"),
   waitlistRole: document.getElementById("waitlistRole"),
+  trustLastDate: document.getElementById("trustLastDate"),
+  trustFreshness: document.getElementById("trustFreshness"),
+  trustModelVersion: document.getElementById("trustModelVersion"),
+  shareXBtn: document.getElementById("shareXBtn"),
+  shareLinkedInBtn: document.getElementById("shareLinkedInBtn"),
+  copyLinkBtn: document.getElementById("copyLinkBtn"),
+  founderName: document.getElementById("founderName"),
+  founderPhone: document.getElementById("founderPhone"),
+  founderSocials: document.getElementById("founderSocials"),
 };
 
 function parseCsv(text) {
@@ -88,6 +102,19 @@ function renderSignals(rows) {
   els.metricEnter.textContent = String(enterCount);
   els.metricWait.textContent = String(waitCount);
   els.metricRisk.textContent = fmtPct(avgVol);
+  els.trustModelVersion.textContent = CONFIG.modelVersion || "v1.0";
+
+  const dates = rows.map((r) => new Date(r.date)).filter((d) => !Number.isNaN(d.getTime()));
+  if (dates.length) {
+    const latest = new Date(Math.max(...dates.map((d) => d.getTime())));
+    const now = new Date();
+    const diffHours = Math.round((now.getTime() - latest.getTime()) / 36e5);
+    els.trustLastDate.textContent = latest.toISOString().slice(0, 10);
+    els.trustFreshness.textContent = diffHours <= 24 ? `${diffHours}h old` : `${Math.round(diffHours / 24)}d old`;
+  } else {
+    els.trustLastDate.textContent = "n/a";
+    els.trustFreshness.textContent = "n/a";
+  }
 
   rows.forEach((row, idx) => {
     const tr = document.createElement("tr");
@@ -188,6 +215,33 @@ async function submitWaitlist(formData) {
   }
 }
 
+function initFounderInfo() {
+  els.founderName.textContent = FOUNDER_NAME;
+  els.founderPhone.textContent = FOUNDER_PHONE;
+  els.founderSocials.href = FOUNDER_SOCIAL;
+  els.founderSocials.textContent = FOUNDER_SOCIAL;
+}
+
+function initShareButtons() {
+  const shareText =
+    "I built MarketMind: an AI analyst that tracks stocks 24/7 and gives ENTER/EXIT/WAIT/AVOID decisions.";
+  els.shareXBtn.addEventListener("click", () => {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(SITE_URL)}`;
+    window.open(url, "_blank", "noopener");
+  });
+  els.shareLinkedInBtn.addEventListener("click", () => {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(SITE_URL)}`;
+    window.open(url, "_blank", "noopener");
+  });
+  els.copyLinkBtn.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(SITE_URL);
+    els.copyLinkBtn.textContent = "Copied";
+    setTimeout(() => {
+      els.copyLinkBtn.textContent = "Copy Link";
+    }, 1200);
+  });
+}
+
 async function onWaitlistSubmit(event) {
   event.preventDefault();
   const formData = new FormData(els.waitlistForm);
@@ -202,4 +256,6 @@ async function onWaitlistSubmit(event) {
 
 els.refreshBtn.addEventListener("click", loadDashboard);
 els.waitlistForm.addEventListener("submit", onWaitlistSubmit);
+initFounderInfo();
+initShareButtons();
 loadDashboard();

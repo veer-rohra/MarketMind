@@ -1,0 +1,18 @@
+{
+  "name": "marketmind-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "send-broadcast": "node src/sendBroadcast.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "nodemailer": "^6.10.0",
+    "openai": "^4.104.0"
+  }
+}

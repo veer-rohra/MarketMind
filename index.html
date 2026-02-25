@@ -54,6 +54,25 @@
           <a class="cta-primary" href="#waitlist">Join Early Access</a>
           <a class="cta-secondary" href="#signals">See Live Signals</a>
         </div>
+        <div class="share-row">
+          <button id="shareXBtn" class="share-btn">Share on X</button>
+          <button id="shareLinkedInBtn" class="share-btn">Share on LinkedIn</button>
+          <button id="copyLinkBtn" class="share-btn">Copy Link</button>
+        </div>
+        <div class="trust-strip">
+          <article>
+            <p>Last Pipeline Date</p>
+            <h4 id="trustLastDate">-</h4>
+          </article>
+          <article>
+            <p>Model Version</p>
+            <h4 id="trustModelVersion">v1.0</h4>
+          </article>
+          <article>
+            <p>Data Freshness</p>
+            <h4 id="trustFreshness">-</h4>
+          </article>
+        </div>
         <div class="hero-metrics">
           <article>
             <h2 id="metricEnter">-</h2>
@@ -156,8 +175,14 @@
 
     <footer class="site-footer">
       <p>Data source: generated files in this repository. Run <code>marketmind_ml/run_daily.sh</code> to refresh.</p>
+      <p class="founder-line">
+        Founder: <span id="founderName">Your Name</span> |
+        Phone: <span id="founderPhone">+1-000-000-0000</span> |
+        Socials: <a id="founderSocials" href="https://x.com/yourprofile" target="_blank" rel="noopener">Profile</a>
+      </p>
     </footer>
 
+    <script src="site-config.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

@@ -152,6 +152,50 @@ h1 {
   color: var(--text);
 }
 
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.share-btn {
+  border: 1px solid var(--line);
+  background: rgba(8, 18, 28, 0.75);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 0.48rem 0.72rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.trust-strip {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.trust-strip article {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(8, 18, 28, 0.75);
+  padding: 0.55rem;
+}
+
+.trust-strip p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.trust-strip h4 {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+}
+
 .hero-metrics {
   margin-top: 1rem;
   display: grid;
@@ -345,6 +389,14 @@ h1 {
   font-size: 0.84rem;
 }
 
+.founder-line {
+  margin-top: 0.4rem;
+}
+
+.founder-line a {
+  color: var(--accent);
+}
+
 code {
   font-family: "IBM Plex Mono", monospace;
 }
@@ -376,6 +428,10 @@ code {
   }
 
   .hero-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .trust-strip {
     grid-template-columns: 1fr;
   }
 

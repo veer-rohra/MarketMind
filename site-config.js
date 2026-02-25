@@ -1,5 +1,5 @@
 window.MARKETMIND_CONFIG = {
-  waitlistEndpoint: "https://your-render-backend-url.onrender.com/api/waitlist",
+  waitlistEndpoint: "https://marketmind-backend-vzf5.onrender.com/api/waitlist",
   founderName: "Veer Rohra",
   founderPhone: "+91 7340545327",
   founderSocials: [

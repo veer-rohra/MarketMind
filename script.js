@@ -233,14 +233,15 @@ function initFounderInfo() {
   els.founderName.textContent = primary.name || "Founder";
   els.founderPhone.textContent = primary.phone || "-";
   els.founderSocialsContainer.innerHTML = "";
-  (primary.socials || []).forEach((s, idx) => {
+  const socials = primary.socials || [];
+  socials.forEach((s, idx) => {
     const a = document.createElement("a");
     a.href = s.url;
     a.target = "_blank";
     a.rel = "noopener";
     a.textContent = s.label || s.url;
     els.founderSocialsContainer.appendChild(a);
-    if (idx < FOUNDER_SOCIALS.length - 1) {
+    if (idx < socials.length - 1) {
       els.founderSocialsContainer.append(" | ");
     }
   });

@@ -63,6 +63,7 @@ const chartState = {
 };
 
 let signalsCache = [];
+let tickerHistoryMap = new Map();
 
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -119,6 +120,46 @@ function badge(action) {
   return `<span class="badge ${action}">${label}</span>`;
 }
 
+function buildTickerHistoryMap(rows) {
+  const map = new Map();
+  rows.forEach((r) => {
+    const ticker = String(r.ticker || "").trim();
+    const close = Number(r.close);
+    if (!ticker || Number.isNaN(close)) return;
+    if (!map.has(ticker)) map.set(ticker, []);
+    map.get(ticker).push({ date: r.date, close });
+  });
+  for (const [ticker, series] of map.entries()) {
+    series.sort((a, b) => new Date(a.date) - new Date(b.date));
+    map.set(ticker, series.slice(-30).map((p) => p.close));
+  }
+  return map;
+}
+
+function sparklineSvg(values) {
+  if (!Array.isArray(values) || values.length < 2) return "-";
+  const w = 120;
+  const h = 34;
+  const pad = 3;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const scaleX = (i) => pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
+  const scaleY = (v) => {
+    if (max === min) return h / 2;
+    return pad + ((max - v) / (max - min)) * (h - pad * 2);
+  };
+  const points = values.map((v, i) => `${scaleX(i).toFixed(2)},${scaleY(v).toFixed(2)}`).join(" ");
+  const lastX = scaleX(values.length - 1).toFixed(2);
+  const lastY = scaleY(values[values.length - 1]).toFixed(2);
+  return `
+    <svg class="sparkline" viewBox="0 0 ${w} ${h}" aria-label="30-day trend sparkline">
+      <rect class="bg" x="0" y="0" width="${w}" height="${h}" rx="6"></rect>
+      <polyline class="line" points="${points}"></polyline>
+      <circle class="end-dot" cx="${lastX}" cy="${lastY}" r="2.3"></circle>
+    </svg>
+  `;
+}
+
 function actionBucket(action) {
   if (action === "ENTER") return "long";
   if (action === "EXIT") return "short";
@@ -136,7 +177,7 @@ function renderSignals(rows) {
   els.signalsBody.innerHTML = "";
   const filteredRows = applySignalFilter(rows);
   if (!filteredRows.length) {
-    els.signalsBody.innerHTML = `<tr><td colspan="5">No signal data found. Run marketmind_ml/run_daily.sh first.</td></tr>`;
+    els.signalsBody.innerHTML = `<tr><td colspan="6">No signal data found. Run marketmind_ml/run_daily.sh first.</td></tr>`;
     els.metricEnter.textContent = "0";
     els.metricWait.textContent = "0";
     els.metricRisk.textContent = "n/a";
@@ -174,6 +215,7 @@ function renderSignals(rows) {
       <td>${fmtPct(row.pred_forward_return_5d)}</td>
       <td>${fmtPct(row.volatility_20d)}</td>
       <td>${Number(row.close || 0).toFixed(2)}</td>
+      <td>${sparklineSvg(tickerHistoryMap.get(row.ticker))}</td>
     `;
     els.signalsBody.appendChild(tr);
   });
@@ -218,14 +260,19 @@ async function fetchCsv(path) {
 
 async function loadDashboard() {
   try {
-    const [signals, portfolio] = await Promise.all([fetchCsv(SIGNALS_PATH), fetchCsv(PORTFOLIO_PATH)]);
+    const [signals, portfolio, liveRows] = await Promise.all([
+      fetchCsv(SIGNALS_PATH),
+      fetchCsv(PORTFOLIO_PATH),
+      fetchCsv(LIVE_DATA_PATH).catch(() => []),
+    ]);
+    tickerHistoryMap = buildTickerHistoryMap(liveRows);
     renderSignals(signals);
     renderPortfolio(portfolio);
     updateDataSummary(signals);
   } catch (err) {
     els.signalsMeta.textContent = "Data unavailable";
     els.portfolioMeta.textContent = "Data unavailable";
-    els.signalsBody.innerHTML = `<tr><td colspan="5">${err.message}</td></tr>`;
+    els.signalsBody.innerHTML = `<tr><td colspan="6">${err.message}</td></tr>`;
     els.portfolioCards.innerHTML = `<article class="card">${err.message}</article>`;
   }
 }

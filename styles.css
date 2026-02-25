@@ -346,11 +346,32 @@ h1 {
   padding: 0.7rem 0.55rem;
   text-align: left;
   border-bottom: 1px solid var(--line);
+  vertical-align: middle;
 }
 
 .table-wrap th {
   color: #cfdeef;
   font-weight: 500;
+}
+
+.sparkline {
+  width: 120px;
+  height: 34px;
+  display: block;
+}
+
+.sparkline .line {
+  fill: none;
+  stroke: #5eead4;
+  stroke-width: 2;
+}
+
+.sparkline .bg {
+  fill: rgba(12, 30, 46, 0.55);
+}
+
+.sparkline .end-dot {
+  fill: #5eead4;
 }
 
 .badge {

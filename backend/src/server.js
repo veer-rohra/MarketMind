@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import { getWaitlist, upsertSubscriber } from "./store.js";
 import { sendWelcomeEmail, sendEmail, generateAiReply } from "./mailer.js";
@@ -11,7 +12,9 @@ const app = express();
 const port = Number(process.env.PORT || 8080);
 const siteOrigin = process.env.SITE_ORIGIN || "https://veer-rohra.github.io";
 const adminToken = process.env.ADMIN_TOKEN || "";
-const adminPagePath = path.resolve("backend/src/admin.html");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const adminPagePath = path.join(__dirname, "admin.html");
 
 app.use(cors({ origin: [siteOrigin, "http://localhost:5500", "http://127.0.0.1:5500", "http://localhost:3000"] }));
 app.use(express.json());
